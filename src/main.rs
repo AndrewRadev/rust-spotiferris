@@ -1,8 +1,5 @@
 //! A Hello World example application for working with Gotham.
 
-extern crate gotham;
-extern crate http;
-
 use gotham::state::State;
 
 const HELLO_WORLD: &'static str = "Hello World!";
