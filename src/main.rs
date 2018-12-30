@@ -1,5 +1,7 @@
-use gotham::router::builder::*;
+use std::env;
+use gotham::handler::assets::FileOptions;
 use gotham::router::Router;
+use gotham::router::builder::*;
 
 mod routes;
 mod api;
@@ -31,6 +33,15 @@ fn router() -> Router {
             // Won't be used for the moment, but will be interesting later
             route.get("/songs").to(api::songs::index);
         });
+
+        let mut assets_path = env::current_dir().unwrap();
+        assets_path.push("public");
+        route.get("*").to_dir(
+            FileOptions::new(&assets_path)
+                .with_cache_control("no-cache")
+                .with_gzip(true)
+                .build(),
+        );
     })
 }
 

@@ -1,10 +1,15 @@
 {% extends "layout.html" %}
 
+{% block content %}
 <h1>{{ display_title }}</h1>
 
-<ul>
-  <li>Album: {{ album }}</li>
-  <li>Duration: {{ duration }}s</li>
-</ul>
+<dl class="row">
+  <dt class="col-sm-2">Album:</dt>
+  <dd class="col-sm-10">{{ album }}</dd>
+
+  <dt class="col-sm-2">Duration:</dt>
+  <dd class="col-sm-10">{{ duration }}s</dd>
+</dl>
 
 <a href="/songs">Back to index</a>
+{% endblock %}
