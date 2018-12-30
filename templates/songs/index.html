@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>Songs</h1>
+
+<table>
+  <tr>
+    <th>ID</th>
+    <th>Album</th>
+    <th>Artist - Title</th>
+    <th>Duration</th>
+  </tr>
+
+  {% for song in songs %}
+  <tr>
+    <td>{{ song.id }}</td>
+    <td>{{ song.album }}</td>
+    <td>
+      <a href="/songs/{{ song.id }}">
+        {{ song.display_title }}
+      </a>
+    </td>
+    <td>{{ song.duration }}s</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

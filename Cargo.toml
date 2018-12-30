@@ -6,6 +6,13 @@ edition = "2018"
 
 [dependencies]
 gotham = "*"
+gotham_derive = "*"
+serde = "*"
+serde_derive = "*"
 hyper = "*"
 http = "*"
 mime = "*"
+askama = "*"
+
+[build-dependencies]
+askama = "*"

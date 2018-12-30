@@ -13,10 +13,18 @@ fn router() -> Router {
             assoc.post().to(routes::songs::create);
         });
         route.associate("/songs/:id", |assoc| {
-            assoc.get().to(routes::songs::show);
-            assoc.put().to(routes::songs::update);
-            assoc.patch().to(routes::songs::update);
-            assoc.delete().to(routes::songs::delete);
+            assoc.get().
+                with_path_extractor::<routes::songs::SongExtractor>().
+                to(routes::songs::show);
+            assoc.put().
+                with_path_extractor::<routes::songs::SongExtractor>().
+                to(routes::songs::update);
+            assoc.patch().
+                with_path_extractor::<routes::songs::SongExtractor>().
+                to(routes::songs::update);
+            assoc.delete().
+                with_path_extractor::<routes::songs::SongExtractor>().
+                to(routes::songs::delete);
         });
 
         route.scope("/api", |route| {
@@ -64,7 +72,20 @@ mod tests {
             let raw_body = response.read_body().unwrap();
             let body = String::from_utf8_lossy(&raw_body);
 
-            assert_includes!(body, "song show")
+            // TODO: create record, read it
+            assert_includes!(body, "Johnny Cash")
+        }
+
+        #[test]
+        fn get_missing_song() {
+            let test_server = TestServer::new(router()).unwrap();
+            let response = test_server
+                .client()
+                .get("http://localhost/songs/99")
+                .perform()
+                .unwrap();
+
+            assert_eq!(response.status(), StatusCode::NOT_FOUND);
         }
 
         #[test]
