@@ -739,15 +739,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust-spotiferris"
-version = "0.1.0"
-dependencies = [
- "gotham 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "http 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
- "hyper 0.12.19 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "rustc-demangle"
 version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -848,6 +839,15 @@ version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "unreachable 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "spotiferris"
+version = "0.1.0"
+dependencies = [
+ "gotham 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "http 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hyper 0.12.19 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
