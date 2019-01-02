@@ -13,6 +13,8 @@ hyper = "*"
 http = "*"
 mime = "*"
 askama = "*"
+diesel = { version = "1.3.0", features = ["postgres"] }
+dotenv = "0.10"
 
 [build-dependencies]
 askama = "*"
