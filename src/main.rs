@@ -1,8 +1,13 @@
+#[macro_use]
+extern crate diesel;
+
 use std::env;
 use gotham::handler::assets::FileOptions;
 use gotham::router::Router;
 use gotham::router::builder::*;
 
+mod schema;
+mod models;
 mod routes;
 mod api;
 

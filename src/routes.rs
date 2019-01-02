@@ -4,14 +4,7 @@ use gotham::helpers::http::response::*;
 use gotham::state::State;
 use hyper::{Response, Body, StatusCode};
 
-#[derive(Debug)]
-struct Song {
-    id: i32,
-    title: &'static str,
-    artist: Option<&'static str>,
-    album: Option<&'static str>,
-    duration: u32,
-}
+use crate::models::*;
 
 pub mod songs {
     use super::*;
@@ -33,7 +26,7 @@ pub mod songs {
         pub id: i32,
         pub album: String,
         pub display_title: String,
-        pub duration: u32,
+        pub duration: i32,
     }
 
     #[derive(Deserialize, StateData, StaticResponseExtender)]
@@ -43,12 +36,13 @@ pub mod songs {
 
     impl From<Song> for ShowTemplate {
         fn from(source: Song) -> Self {
-            let display_title = format!("{} - {}", source.artist.unwrap_or("<Unknown>"), source.title);
+            let artist = source.artist.unwrap_or("<Unknown>".to_string());
+            let display_title = format!("{} - {}", artist, source.title);
 
             ShowTemplate {
                 title: display_title.clone(),
                 id: source.id,
-                album: source.album.unwrap_or("<Unknown>").to_string(),
+                album: source.album.unwrap_or("<Unknown>".to_string()),
                 display_title,
                 duration: source.duration,
             }
@@ -57,9 +51,24 @@ pub mod songs {
 
     pub fn index(state: State) -> (State, impl IntoResponse) {
         let songs = vec![
-            Song { id: 1, title: "The Sad Song",     artist: Some("Johnny Cash"), album: None, duration: 100 },
-            Song { id: 2, title: "The Bipolar Song", artist: Some("Nirvana"),     album: None, duration: 100 },
-            Song { id: 3, title: "The GDPR Song",    artist: Some("NLO"),         album: None, duration: 100 },
+            Song {
+                id:     1,
+                title:  "The Sad Song".to_string(),
+                artist: Some("Johnny Cash".to_string()),
+                ..Song::default()
+            },
+            Song {
+                id:     2,
+                title:  "The Bipolar Song".to_string(),
+                artist: Some("Nirvana".to_string()),
+                ..Song::default()
+            },
+            Song {
+                id:     3,
+                title:  "The GDPR Song".to_string(),
+                artist: Some("NLO".to_string()),
+                ..Song::default()
+            },
         ];
 
         let template = IndexTemplate {
@@ -73,9 +82,24 @@ pub mod songs {
 
     pub fn show(state: State) -> (State, impl IntoResponse) {
         let songs = vec![
-            Song { id: 1, title: "The Sad Song",     artist: Some("Johnny Cash"), album: None, duration: 100 },
-            Song { id: 2, title: "The Bipolar Song", artist: Some("Nirvana"),     album: None, duration: 100 },
-            Song { id: 3, title: "The GDPR Song",    artist: Some("NLO"),         album: None, duration: 100 },
+            Song {
+                id:     1,
+                title:  "The Sad Song".to_string(),
+                artist: Some("Johnny Cash".to_string()),
+                ..Song::default()
+            },
+            Song {
+                id:     2,
+                title:  "The Bipolar Song".to_string(),
+                artist: Some("Nirvana".to_string()),
+                ..Song::default()
+            },
+            Song {
+                id:     3,
+                title:  "The GDPR Song".to_string(),
+                artist: Some("NLO".to_string()),
+                ..Song::default()
+            },
         ];
 
         let SongExtractor { id } = SongExtractor::borrow_from(&state);
