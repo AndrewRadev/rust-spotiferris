@@ -5,9 +5,11 @@ use gotham::state::State;
 use hyper::{Response, Body, StatusCode};
 
 use crate::models::*;
+use crate::establish_db_connection;
 
 pub mod songs {
     use super::*;
+    use diesel::prelude::*;
     use gotham_derive::*;
     use serde_derive::*;
     use gotham::state::FromState;
@@ -50,30 +52,14 @@ pub mod songs {
     }
 
     pub fn index(state: State) -> (State, impl IntoResponse) {
-        let songs = vec![
-            Song {
-                id:     1,
-                title:  "The Sad Song".to_string(),
-                artist: Some("Johnny Cash".to_string()),
-                ..Song::default()
-            },
-            Song {
-                id:     2,
-                title:  "The Bipolar Song".to_string(),
-                artist: Some("Nirvana".to_string()),
-                ..Song::default()
-            },
-            Song {
-                id:     3,
-                title:  "The GDPR Song".to_string(),
-                artist: Some("NLO".to_string()),
-                ..Song::default()
-            },
-        ];
+        use crate::schema::songs::dsl::*;
+
+        let db = establish_db_connection();
+        let records = songs.load::<Song>(&db).expect("Error loading songs");
 
         let template = IndexTemplate {
             title: "Song listing",
-            songs: songs.into_iter().map(|s| s.into()).collect(),
+            songs: records.into_iter().map(|s| s.into()).collect(),
         };
 
         let response = render_template(&state, template);
@@ -81,38 +67,18 @@ pub mod songs {
     }
 
     pub fn show(state: State) -> (State, impl IntoResponse) {
-        let songs = vec![
-            Song {
-                id:     1,
-                title:  "The Sad Song".to_string(),
-                artist: Some("Johnny Cash".to_string()),
-                ..Song::default()
-            },
-            Song {
-                id:     2,
-                title:  "The Bipolar Song".to_string(),
-                artist: Some("Nirvana".to_string()),
-                ..Song::default()
-            },
-            Song {
-                id:     3,
-                title:  "The GDPR Song".to_string(),
-                artist: Some("NLO".to_string()),
-                ..Song::default()
-            },
-        ];
+        use crate::schema::songs::dsl::*;
 
-        let SongExtractor { id } = SongExtractor::borrow_from(&state);
-        // TODO: get song from database
-        let song = match songs.into_iter().find(|s| s.id == *id) {
-            Some(song) => song,
-            None => {
+        let requested_id = SongExtractor::borrow_from(&state).id;
+        let db = establish_db_connection();
+        let record = match songs.filter(id.eq(requested_id)).first::<Song>(&db) {
+            Ok(record) => record,
+            Err(_) => {
                 let response = render_404(&state);
                 return (state, response);
             }
         };
-
-        let template: ShowTemplate = song.into();
+        let template: ShowTemplate = record.into();
 
         let response = render_template(&state, template);
         (state, response)
@@ -128,6 +94,25 @@ pub mod songs {
 
     pub fn delete(state: State) -> (State, impl IntoResponse) {
         (state, "song delete")
+    }
+}
+
+pub mod api {
+    pub mod songs {
+        use gotham::state::State;
+        use gotham::helpers::http::response::create_response;
+        use hyper::{Body, Response, StatusCode};
+
+        pub fn index(state: State) -> (State, Response<Body>) {
+            let response = create_response(
+                &state,
+                StatusCode::OK,
+                mime::APPLICATION_JSON,
+                "{}", // serde_json::to_string(&song).expect("serialized song"),
+            );
+
+            (state, response)
+        }
     }
 }
 

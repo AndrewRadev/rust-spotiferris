@@ -1,4 +1,5 @@
 use std::time::SystemTime;
+use crate::schema::songs;
 
 #[derive(Debug, Queryable)]
 pub struct Song {
@@ -11,18 +12,13 @@ pub struct Song {
     pub updated_at: SystemTime,
 }
 
-impl Default for Song {
-    fn default() -> Song {
-        let now = SystemTime::now();
-
-        Song {
-            id: 0,
-            title: String::from(""),
-            artist: None,
-            album: None,
-            duration: 0,
-            created_at: now,
-            updated_at: now,
-        }
-    }
+#[derive(Debug, Insertable)]
+#[table_name="songs"]
+pub struct NewSong<'a> {
+    pub title: &'a str,
+    pub artist: Option<&'a str>,
+    pub album: Option<&'a str>,
+    pub duration: i32,
+    pub created_at: SystemTime,
+    pub updated_at: SystemTime,
 }

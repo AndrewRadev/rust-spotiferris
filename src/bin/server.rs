@@ -1,15 +1,8 @@
-#[macro_use]
-extern crate diesel;
-
 use std::env;
 use gotham::handler::assets::FileOptions;
 use gotham::router::Router;
 use gotham::router::builder::*;
-
-mod schema;
-mod models;
-mod routes;
-mod api;
+use spotiferris::*;
 
 fn router() -> Router {
     build_simple_router(|route| {
@@ -36,7 +29,7 @@ fn router() -> Router {
 
         route.scope("/api", |route| {
             // Won't be used for the moment, but will be interesting later
-            route.get("/songs").to(api::songs::index);
+            route.get("/songs").to(routes::api::songs::index);
         });
 
         let mut assets_path = env::current_dir().unwrap();
@@ -73,13 +66,31 @@ mod tests {
 
     mod routes {
         use super::*;
+        use std::time::SystemTime;
 
         #[test]
         fn get_single_song() {
+            use diesel::prelude::*;
+            use crate::schema::songs;
+            use crate::models::*;
+
+            let db = establish_db_connection();
+            let now = SystemTime::now();
+            let new_song = NewSong {
+                title: "The Sad Song",
+                artist: Some("Johnny Cash"),
+                album: None, duration: 0, created_at: now, updated_at: now,
+            };
+
+            let created_song = diesel::insert_into(songs::table)
+                .values(&new_song)
+                .get_result::<Song>(&db)
+                .expect("Error saving new song");
+
             let test_server = TestServer::new(router()).unwrap();
             let response = test_server
                 .client()
-                .get("http://localhost/songs/1")
+                .get(format!("http://localhost/songs/{}", created_song.id))
                 .perform()
                 .unwrap();
 
@@ -88,7 +99,6 @@ mod tests {
             let raw_body = response.read_body().unwrap();
             let body = String::from_utf8_lossy(&raw_body);
 
-            // TODO: create record, read it
             assert_includes!(body, "Johnny Cash")
         }
 

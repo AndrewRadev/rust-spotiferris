@@ -1,3 +1,6 @@
+// Silences a very specific warning that will be fixed in a later diesel version:
+#![allow(proc_macro_derive_resolution_fallback)]
+
 #[macro_use]
 extern crate diesel;
 
@@ -7,6 +10,7 @@ use std::env;
 
 pub mod models;
 pub mod schema;
+pub mod routes;
 
 pub fn establish_db_connection() -> PgConnection {
     dotenv().ok();
