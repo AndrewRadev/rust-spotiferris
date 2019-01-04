@@ -10,7 +10,8 @@ use std::env;
 
 pub mod models;
 pub mod schema;
-pub mod routes;
+pub mod routing;
+pub mod handlers;
 
 pub fn establish_db_connection() -> PgConnection {
     dotenv().ok();

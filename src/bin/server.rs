@@ -1,52 +1,9 @@
-use std::env;
-use gotham::handler::assets::FileOptions;
-use gotham::router::Router;
-use gotham::router::builder::*;
 use spotiferris::*;
-
-fn router() -> Router {
-    build_simple_router(|route| {
-        route.get_or_head("/").to(routes::songs::index);
-
-        route.associate("/songs", |assoc| {
-            assoc.get_or_head().to(routes::songs::index);
-            assoc.post().to(routes::songs::create);
-        });
-        route.associate("/songs/:id", |assoc| {
-            assoc.get().
-                with_path_extractor::<routes::songs::SongExtractor>().
-                to(routes::songs::show);
-            assoc.put().
-                with_path_extractor::<routes::songs::SongExtractor>().
-                to(routes::songs::update);
-            assoc.patch().
-                with_path_extractor::<routes::songs::SongExtractor>().
-                to(routes::songs::update);
-            assoc.delete().
-                with_path_extractor::<routes::songs::SongExtractor>().
-                to(routes::songs::delete);
-        });
-
-        route.scope("/api", |route| {
-            // Won't be used for the moment, but will be interesting later
-            route.get("/songs").to(routes::api::songs::index);
-        });
-
-        let mut assets_path = env::current_dir().unwrap();
-        assets_path.push("public");
-        route.get("*").to_dir(
-            FileOptions::new(&assets_path)
-                .with_cache_control("no-cache")
-                .with_gzip(true)
-                .build(),
-        );
-    })
-}
 
 pub fn main() {
     let addr = "0.0.0.0:7878";
     println!("Listening for requests at http://{}", addr);
-    gotham::start(addr, router())
+    gotham::start(addr, routing::router())
 }
 
 #[cfg(test)]
