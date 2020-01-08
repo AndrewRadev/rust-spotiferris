@@ -10,8 +10,8 @@ use crate::establish_db_connection;
 pub mod songs {
     use super::*;
     use diesel::prelude::*;
+    use serde::Deserialize;
     use gotham_derive::*;
-    use serde_derive::*;
     use gotham::state::FromState;
 
     #[derive(Debug, Template)]
