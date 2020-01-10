@@ -1,8 +1,13 @@
+use std::collections::HashMap;
+use std::time::SystemTime;
+
 use askama::Template;
-use gotham::handler::IntoResponse;
+use futures::{future, Future, Stream};
+use gotham::handler::{HandlerFuture, IntoResponse, IntoHandlerError};
 use gotham::helpers::http::response::*;
 use gotham::state::State;
 use hyper::{Response, Body, StatusCode};
+use url::form_urlencoded;
 
 use crate::models::*;
 use crate::establish_db_connection;
@@ -31,8 +36,14 @@ pub mod songs {
         pub duration: i32,
     }
 
+    #[derive(Debug, Template)]
+    #[template(path = "songs/new.html")]
+    pub struct NewTemplate {
+        pub title: &'static str,
+    }
+
     #[derive(Deserialize, StateData, StaticResponseExtender)]
-    pub struct SongExtractor {
+    pub struct SongPath {
         id: i32,
     }
 
@@ -69,9 +80,14 @@ pub mod songs {
     pub fn show(state: State) -> (State, impl IntoResponse) {
         use crate::schema::songs::dsl::*;
 
-        let requested_id = SongExtractor::borrow_from(&state).id;
+        let requested_id = SongPath::borrow_from(&state).id;
         let db = establish_db_connection();
-        let record = match songs.filter(id.eq(requested_id)).first::<Song>(&db) {
+
+        let query = songs.
+            filter(id.eq(requested_id)).
+            order(title);
+
+        let record = match query.first::<Song>(&db) {
             Ok(record) => record,
             Err(_) => {
                 let response = render_404(&state);
@@ -84,8 +100,54 @@ pub mod songs {
         (state, response)
     }
 
-    pub fn create(state: State) -> (State, impl IntoResponse) {
-        (state, "song create")
+    pub fn new(state: State) -> (State, impl IntoResponse) {
+        let template = NewTemplate { title: "New Song" };
+        let response = render_template(&state, template);
+
+        (state, response)
+    }
+
+    pub fn create(mut state: State) -> Box<HandlerFuture> {
+        let f = Body::take_from(&mut state)
+            .concat2()
+            .then(|full_body| match full_body {
+                Ok(valid_body) => {
+                    let body_content = valid_body.into_bytes();
+                    let form_data: HashMap<_, _> = form_urlencoded::parse(&body_content).
+                        map(|(k, v)| (k.into_owned(), v.into_owned())).
+                        collect();
+                    let now = SystemTime::now();
+
+                    let new_song = NewSong {
+                        title: form_data.get("title").unwrap(),
+                        artist: form_data.get("artist").map(String::as_str),
+                        album: form_data.get("album").map(String::as_str),
+                        duration: form_data.get("duration").and_then(|d| d.parse().ok()).unwrap_or(0),
+                        created_at: now,
+                        updated_at: now,
+                    };
+
+                    use crate::schema::songs::dsl::*;
+                    let db = establish_db_connection();
+                    let created_song = diesel::insert_into(songs)
+                        .values(&new_song)
+                        .get_result::<Song>(&db)
+                        .expect("Error saving new song");
+                    let song_url = format!("/songs/{}", created_song.id);
+
+                    // The "temporary redirect" generates a 307, which confuses my browser
+                    // let response = create_temporary_redirect(&state, song_url);
+
+                    let mut response = create_empty_response(&state, StatusCode::FOUND);
+                    response.
+                        headers_mut().
+                        insert(hyper::header::LOCATION, song_url.parse().unwrap());
+                    future::ok((state, response))
+                }
+                Err(e) => future::err((state, e.into_handler_error())),
+            });
+
+        Box::new(f)
     }
 
     pub fn update(state: State) -> (State, impl IntoResponse) {

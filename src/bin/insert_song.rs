@@ -35,10 +35,12 @@ fn main() {
         };
 
         println!("{:?}", new_song);
+
         let created_song = diesel::insert_into(songs::table)
             .values(&new_song)
             .get_result::<Song>(&connection)
             .expect("Error saving new song");
+
         println!(" -> {:?}", created_song);
         println!("");
     }

@@ -12,18 +12,21 @@ pub fn router() -> Router {
             assoc.get_or_head().to(handlers::songs::index);
             assoc.post().to(handlers::songs::create);
         });
+
+        route.get("/songs/new").to(handlers::songs::new);
+
         route.associate("/songs/:id", |assoc| {
             assoc.get().
-                with_path_extractor::<handlers::songs::SongExtractor>().
+                with_path_extractor::<handlers::songs::SongPath>().
                 to(handlers::songs::show);
             assoc.put().
-                with_path_extractor::<handlers::songs::SongExtractor>().
+                with_path_extractor::<handlers::songs::SongPath>().
                 to(handlers::songs::update);
             assoc.patch().
-                with_path_extractor::<handlers::songs::SongExtractor>().
+                with_path_extractor::<handlers::songs::SongPath>().
                 to(handlers::songs::update);
             assoc.delete().
-                with_path_extractor::<handlers::songs::SongExtractor>().
+                with_path_extractor::<handlers::songs::SongPath>().
                 to(handlers::songs::delete);
         });
 

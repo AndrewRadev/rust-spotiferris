@@ -1,5 +1,6 @@
 use std::time::SystemTime;
 use crate::schema::songs;
+use diesel::{Queryable, Insertable};
 
 #[derive(Debug, Queryable)]
 pub struct Song {

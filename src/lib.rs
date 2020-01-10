@@ -1,6 +1,3 @@
-// Silences a very specific warning that will be fixed in a later diesel version:
-#![allow(proc_macro_derive_resolution_fallback)]
-
 #[macro_use]
 extern crate diesel;
 
