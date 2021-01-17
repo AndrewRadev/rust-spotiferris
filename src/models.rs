@@ -1,8 +1,6 @@
 use std::time::SystemTime;
-use crate::schema::songs;
-use diesel::{Queryable, Insertable};
 
-#[derive(Debug, Queryable)]
+#[derive(Debug)]
 pub struct Song {
     pub id: i32,
     pub title: String,
@@ -13,8 +11,7 @@ pub struct Song {
     pub updated_at: SystemTime,
 }
 
-#[derive(Debug, Insertable)]
-#[table_name="songs"]
+#[derive(Debug)]
 pub struct NewSong<'a> {
     pub title: &'a str,
     pub artist: Option<&'a str>,
