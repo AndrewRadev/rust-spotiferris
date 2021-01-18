@@ -17,8 +17,15 @@ pub fn configuration() -> Box<dyn Fn(&mut web::ServiceConfig)> {
             service(
                 web::resource("/songs/{id}").
                 route(web::get().to(handlers::songs::show)).
-                route(web::put().to(handlers::songs::update)).
-                route(web::delete().to(handlers::songs::delete))
+                route(web::post().to(handlers::songs::update))
+            ).
+            service(
+                web::resource("/songs/{id}/edit").
+                route(web::get().to(handlers::songs::edit))
+            ).
+            service(
+                web::resource("/songs/{id}/delete").
+                route(web::post().to(handlers::songs::delete))
             );
     })
 }

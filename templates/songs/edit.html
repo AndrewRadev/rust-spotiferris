@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<form action="/songs/{{ id }}" method="POST" accept-charset="utf-8">
+  <table border="0">
+    <tr>
+      <td>Song:</td>
+      <td>
+        <input type="text" name="artist" value={{ artist }} />
+        -
+        <input type="text" name="title" value={{ title }} required=true />
+      </td>
+    </tr>
+
+    <tr>
+      <td>Album:</td>
+      <td><input type="text" name="album" value="{{ album }}" /></td>
+    </tr>
+
+    <tr>
+      <td>Duration (seconds):</td>
+      <td><input type="number" name="duration" value="{{ duration }}" /></td>
+    </tr>
+  </table>
+
+  <input type="hidden" name="id" value="{{ id }}" />
+  <input type="hidden" name="created_at" value="{{ created_at }}" />
+  <input type="hidden" name="updated_at" value="{{ updated_at }}" />
+
+  <p><input type="submit" value="Update" /></p>
+</form>
+{% endblock %}

@@ -5,14 +5,22 @@
 
 <table class="table">
   <tr>
+    <th></th>
     <th>ID</th>
     <th>Album</th>
     <th>Artist - Title</th>
     <th>Duration</th>
+    <th></th>
   </tr>
 
   {% for song in songs %}
   <tr>
+    <td>
+      <a href="/songs/{{ song.id }}/edit" class="btn btn-outline-primary" role="button">
+        Edit
+      </a>
+    </td>
+
     <td>{{ song.id }}</td>
     <td>{{ song.album }}</td>
     <td>
@@ -21,6 +29,12 @@
       </a>
     </td>
     <td>{{ song.duration }}s</td>
+
+    <td>
+      <form method="POST" action="/songs/{{ song.id }}/delete">
+        <input type="submit" class="btn btn-outline-danger" role="button" value="Delete">
+      </form>
+    </td>
   </tr>
   {% endfor %}
 </table>

@@ -41,12 +41,14 @@ impl Song {
                 artist     = $2,
                 album      = $3,
                 duration   = $4,
-                updated_at = NOW();
+                updated_at = NOW()
+            WHERE id = $5;
         "#).
             bind(&self.title).
             bind(&self.artist).
             bind(&self.album).
             bind(&self.duration).
+            bind(&self.id).
             execute(db).await?;
 
         Ok(())

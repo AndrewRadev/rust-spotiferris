@@ -3,6 +3,7 @@ use actix_web::{web, HttpRequest, HttpResponse, Result};
 use actix_files::NamedFile;
 use http::StatusCode;
 use sqlx::PgPool;
+use chrono::{DateTime, Local};
 
 fn render_template(template: impl Template) -> HttpResponse {
     match template.render() {
@@ -39,6 +40,18 @@ pub mod songs {
     }
 
     #[derive(Debug, Template)]
+    #[template(path = "songs/edit.html")]
+    pub struct EditTemplate {
+        pub id: i32,
+        pub title: String,
+        pub album: String,
+        pub artist: String,
+        pub duration: i32,
+        pub created_at: DateTime<Local>,
+        pub updated_at: DateTime<Local>,
+    }
+
+    #[derive(Debug, Template)]
     #[template(path = "songs/new.html")]
     pub struct NewTemplate {
         pub title: &'static str,
@@ -50,11 +63,25 @@ pub mod songs {
             let display_title = format!("{} - {}", artist, source.title);
 
             ShowTemplate {
-                title: display_title.clone(),
                 id: source.id,
+                title: display_title.clone(),
                 album: source.album.unwrap_or("<Unknown>".to_string()),
                 display_title,
                 duration: source.duration,
+            }
+        }
+    }
+
+    impl From<Song> for EditTemplate {
+        fn from(source: Song) -> Self {
+            EditTemplate {
+                id:         source.id,
+                title:      source.title.clone(),
+                artist:     source.artist.unwrap_or_else(String::new),
+                album:      source.album.unwrap_or_else(String::new),
+                duration:   source.duration,
+                created_at: source.created_at,
+                updated_at: source.updated_at,
             }
         }
     }
@@ -83,6 +110,19 @@ pub mod songs {
         }
     }
 
+    pub async fn edit(
+        request: HttpRequest,
+        db:      web::Data<PgPool>,
+        path:    web::Path<i32>
+    ) -> Result<HttpResponse> {
+        let web::Path(id) = path;
+
+        match Song::find_one(&db, id).await {
+            Ok(song) => Ok(render_template(EditTemplate::from(song))),
+            Err(_) => render_404(request).await,
+        }
+    }
+
     pub fn new() -> HttpResponse {
         render_template(NewTemplate { title: "New Song" })
     }
@@ -107,8 +147,11 @@ pub mod songs {
         path:    web::Path<i32>,
         form:    web::Form<Song>
     ) -> Result<HttpResponse> {
+        println!("OK");
         let web::Path(id) = path;
+        println!("{:?}", path);
         let song = form.into_inner();
+        println!("{:?}", song);
 
         // Kinda dumb, better to have a SongUpdate struct
         assert_eq!(id, song.id);
