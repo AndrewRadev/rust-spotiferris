@@ -11,9 +11,10 @@ fn render_template(template: impl Template) -> HttpResponse {
     }
 }
 
-pub async fn render_404() -> actix_web::Result<NamedFile> {
-    let file = NamedFile::open("static/404.html")?;
-    Ok(file.set_status_code(StatusCode::NOT_FOUND))
+pub async fn render_404(request: HttpRequest) -> actix_web::Result<HttpResponse> {
+    NamedFile::open("static/404.html")?.
+        set_status_code(StatusCode::NOT_FOUND).
+        into_response(&request)
 }
 
 pub mod songs {
@@ -71,14 +72,14 @@ pub mod songs {
 
     pub async fn show(
         request: HttpRequest,
-        db: web::Data<PgPool>,
-        path: web::Path<i32>
+        db:      web::Data<PgPool>,
+        path:    web::Path<i32>
     ) -> Result<HttpResponse> {
         let web::Path(id) = path;
 
         match Song::find_one(&db, id).await {
             Ok(song) => Ok(render_template(ShowTemplate::from(song))),
-            Err(_) => render_404().await.and_then(|f| f.into_response(&request)),
+            Err(_) => render_404(request).await,
         }
     }
 
@@ -100,11 +101,49 @@ pub mod songs {
         }
     }
 
-    pub fn update() -> HttpResponse {
-        HttpResponse::Ok().body("update")
+    pub async fn update(
+        request: HttpRequest,
+        db:      web::Data<PgPool>,
+        path:    web::Path<i32>,
+        form:    web::Form<Song>
+    ) -> Result<HttpResponse> {
+        let web::Path(id) = path;
+        let song = form.into_inner();
+
+        // Kinda dumb, better to have a SongUpdate struct
+        assert_eq!(id, song.id);
+
+        match song.update(&db).await {
+            Ok(_) => {
+                let redirect = HttpResponse::Found().
+                    set_header("Location", format!("/songs/{}", song.id)).
+                    finish();
+                Ok(redirect)
+            },
+            Err(_) => render_404(request).await,
+        }
     }
 
-    pub fn delete() -> HttpResponse {
-        HttpResponse::Ok().body("update")
+    pub async fn delete(
+        request: HttpRequest,
+        db:      web::Data<PgPool>,
+        path:    web::Path<i32>,
+    ) -> Result<HttpResponse> {
+        let web::Path(id) = path;
+
+        let song = match Song::find_one(&db, id).await {
+            Ok(song) => song,
+            Err(_) => return render_404(request).await,
+        };
+
+        match song.destroy(&db).await {
+            Ok(_) => {
+                let redirect = HttpResponse::Found().
+                    set_header("Location", "/songs").
+                    finish();
+                Ok(redirect)
+            },
+            Err(_) => render_404(request).await,
+        }
     }
 }

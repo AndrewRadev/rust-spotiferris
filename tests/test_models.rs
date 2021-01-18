@@ -69,3 +69,48 @@ async fn test_song_listing() {
     assert!(songs.contains(&id_1));
     assert!(songs.contains(&id_2));
 }
+
+#[actix_rt::test]
+async fn test_song_update() {
+    let db = get_db().await;
+    clean_db(&db).await;
+
+    let new_song = NewSong {
+        title:    String::from("Undersea Palace"),
+        artist:   None,
+        album:    Some(String::from("Chrono Trigger OST")),
+        duration: 204,
+    };
+    let id = new_song.insert(&db).await.unwrap();
+    let mut song = Song::find_one(&db, id).await.unwrap();
+
+    song.artist = Some(String::from("Yasunori Mitsuda"));
+    song.update(&db).await.unwrap();
+
+    let updated_song = Song::find_one(&db, id).await.unwrap();
+
+    assert_eq!(updated_song.artist.unwrap(), "Yasunori Mitsuda");
+
+    // Same creation time, different update time
+    assert_eq!(updated_song.created_at, song.created_at);
+    assert_ne!(updated_song.updated_at, song.updated_at);
+}
+
+#[actix_rt::test]
+async fn test_song_destroy() {
+    let db = get_db().await;
+    clean_db(&db).await;
+
+    let new_song = NewSong {
+        title:    String::from("Undersea Palace"),
+        artist:   None,
+        album:    Some(String::from("Chrono Trigger OST")),
+        duration: 204,
+    };
+    let id = new_song.insert(&db).await.unwrap();
+    let song = Song::find_one(&db, id).await.unwrap();
+
+    song.destroy(&db).await.unwrap();
+
+    assert!(Song::find_one(&db, id).await.is_err());
+}
