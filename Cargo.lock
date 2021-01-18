@@ -681,6 +681,7 @@ dependencies = [
  "libc",
  "num-integer",
  "num-traits",
+ "serde",
  "time 0.1.44",
  "winapi 0.3.9",
 ]
@@ -2150,6 +2151,7 @@ dependencies = [
  "chrono",
  "dotenv",
  "env_logger",
+ "futures",
  "http",
  "id3",
  "mp3-duration",

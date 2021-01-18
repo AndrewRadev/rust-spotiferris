@@ -1,12 +1,14 @@
 use askama::Template;
-use actix_web::{Responder, HttpResponse};
-use actix_web::error::InternalError;
+use actix_web::{web, HttpRequest, HttpResponse, Result};
 use actix_files::NamedFile;
 use http::StatusCode;
+use sqlx::PgPool;
 
-fn render_template(template: impl Template) -> impl Responder {
-    template.render().
-        map_err(|e| InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR))
+fn render_template(template: impl Template) -> HttpResponse {
+    match template.render() {
+        Ok(contents) => HttpResponse::Ok().body(contents),
+        Err(e)       => HttpResponse::InternalServerError().body(format!("{}", e)),
+    }
 }
 
 pub async fn render_404() -> actix_web::Result<NamedFile> {
@@ -16,8 +18,7 @@ pub async fn render_404() -> actix_web::Result<NamedFile> {
 
 pub mod songs {
     use super::*;
-    use crate::models::Song;
-    // use crate::establish_db_connection;
+    use crate::models::{Song, NewSong};
 
     #[derive(Debug, Template)]
     #[template(path = "songs/index.html")]
@@ -57,20 +58,46 @@ pub mod songs {
         }
     }
 
-    pub fn index() -> HttpResponse {
-        HttpResponse::Ok().body("index")
+    pub async fn index(db: web::Data<PgPool>) -> HttpResponse {
+        let records = Song::find_all(db.as_ref()).await.expect("Error loading songs");
+
+        let template = IndexTemplate {
+            title: "Song listing",
+            songs: records.into_iter().map(|s| s.into()).collect(),
+        };
+
+        render_template(template)
     }
 
-    pub fn show() -> HttpResponse {
-        HttpResponse::Ok().body("show")
+    pub async fn show(
+        request: HttpRequest,
+        db: web::Data<PgPool>,
+        path: web::Path<i32>
+    ) -> Result<HttpResponse> {
+        let web::Path(id) = path;
+
+        match Song::find_one(&db, id).await {
+            Ok(song) => Ok(render_template(ShowTemplate::from(song))),
+            Err(_) => render_404().await.and_then(|f| f.into_response(&request)),
+        }
     }
 
     pub fn new() -> HttpResponse {
-        HttpResponse::Ok().body("new")
+        render_template(NewTemplate { title: "New Song" })
     }
 
-    pub fn create() -> HttpResponse {
-        HttpResponse::Ok().body("create")
+    pub async fn create(
+        db:   web::Data<PgPool>,
+        form: web::Form<NewSong>
+    ) -> HttpResponse {
+        match form.insert(&db).await {
+            Ok(id) => {
+                HttpResponse::Found().
+                    set_header("Location", format!("/songs/{}", id)).
+                    finish()
+            },
+            Err(e) => HttpResponse::BadRequest().body(format!("{:?}", e))
+        }
     }
 
     pub fn update() -> HttpResponse {
