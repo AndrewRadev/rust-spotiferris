@@ -3,6 +3,7 @@
 
 pub mod models;
 pub mod handlers;
+pub mod routing;
 
 // #[cfg(not(test))]
 // pub fn establish_db_connection() -> PgConnection {
