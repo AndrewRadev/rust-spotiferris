@@ -20,5 +20,3 @@ id3           = "0.3"
 mp3-duration  = "0.1.7"
 url           = "2.1.1"
 sqlx          = { version = "0.4.2", default-features = false, features = ["runtime-actix-rustls", "macros", "postgres", "chrono", "migrate"] }
-
-# sqlx       = { version = "0.4.2", default-features = false, features = ["runtime-actix-rustls", "macros", "postgres", "uuid", "chrono", "migrate"] }
