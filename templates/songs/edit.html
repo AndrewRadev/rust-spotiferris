@@ -19,13 +19,9 @@
 
     <tr>
       <td>Duration (seconds):</td>
-      <td><input type="number" name="duration" value="{{ duration }}" /></td>
+      <td><input type="number" name="duration" value="{{ duration }}" required=true /></td>
     </tr>
   </table>
-
-  <input type="hidden" name="id" value="{{ id }}" />
-  <input type="hidden" name="created_at" value="{{ created_at }}" />
-  <input type="hidden" name="updated_at" value="{{ updated_at }}" />
 
   <p><input type="submit" value="Update" /></p>
 </form>

@@ -75,17 +75,17 @@ async fn test_song_update() {
     let db = get_db().await;
     clean_db(&db).await;
 
-    let new_song = NewSong {
+    let mut new_song = NewSong {
         title:    String::from("Undersea Palace"),
         artist:   None,
         album:    Some(String::from("Chrono Trigger OST")),
         duration: 204,
     };
     let id = new_song.insert(&db).await.unwrap();
-    let mut song = Song::find_one(&db, id).await.unwrap();
+    let song = Song::find_one(&db, id).await.unwrap();
 
-    song.artist = Some(String::from("Yasunori Mitsuda"));
-    song.update(&db).await.unwrap();
+    new_song.artist = Some(String::from("Yasunori Mitsuda"));
+    song.update(&db, &new_song).await.unwrap();
 
     let updated_song = Song::find_one(&db, id).await.unwrap();
 

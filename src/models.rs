@@ -33,7 +33,7 @@ impl Song {
             fetch_one(db).await
     }
 
-    pub async fn update(&self, db: &PgPool) -> Result<(), sqlx::Error> {
+    pub async fn update(&self, db: &PgPool, new_song: &NewSong) -> Result<(), sqlx::Error> {
         sqlx::query(r#"
             UPDATE songs
             SET
@@ -44,10 +44,10 @@ impl Song {
                 updated_at = NOW()
             WHERE id = $5;
         "#).
-            bind(&self.title).
-            bind(&self.artist).
-            bind(&self.album).
-            bind(&self.duration).
+            bind(&new_song.title).
+            bind(&new_song.artist).
+            bind(&new_song.album).
+            bind(&new_song.duration).
             bind(&self.id).
             execute(db).await?;
 

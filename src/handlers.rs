@@ -3,7 +3,6 @@ use actix_web::{web, HttpRequest, HttpResponse, Result};
 use actix_files::NamedFile;
 use http::StatusCode;
 use sqlx::PgPool;
-use chrono::{DateTime, Local};
 
 fn render_template(template: impl Template) -> HttpResponse {
     match template.render() {
@@ -37,6 +36,8 @@ pub mod songs {
         pub album: String,
         pub display_title: String,
         pub duration: i32,
+        pub created_at: String,
+        pub updated_at: String,
     }
 
     #[derive(Debug, Template)]
@@ -47,8 +48,6 @@ pub mod songs {
         pub album: String,
         pub artist: String,
         pub duration: i32,
-        pub created_at: DateTime<Local>,
-        pub updated_at: DateTime<Local>,
     }
 
     #[derive(Debug, Template)]
@@ -68,6 +67,8 @@ pub mod songs {
                 album: source.album.unwrap_or("<Unknown>".to_string()),
                 display_title,
                 duration: source.duration,
+                created_at: source.created_at.to_rfc2822(),
+                updated_at: source.updated_at.to_rfc2822(),
             }
         }
     }
@@ -75,13 +76,11 @@ pub mod songs {
     impl From<Song> for EditTemplate {
         fn from(source: Song) -> Self {
             EditTemplate {
-                id:         source.id,
-                title:      source.title.clone(),
-                artist:     source.artist.unwrap_or_else(String::new),
-                album:      source.album.unwrap_or_else(String::new),
-                duration:   source.duration,
-                created_at: source.created_at,
-                updated_at: source.updated_at,
+                id:       source.id,
+                title:    source.title.clone(),
+                artist:   source.artist.unwrap_or_else(String::new),
+                album:    source.album.unwrap_or_else(String::new),
+                duration: source.duration,
             }
         }
     }
@@ -145,18 +144,17 @@ pub mod songs {
         request: HttpRequest,
         db:      web::Data<PgPool>,
         path:    web::Path<i32>,
-        form:    web::Form<Song>
+        form:    web::Form<NewSong>
     ) -> Result<HttpResponse> {
-        println!("OK");
         let web::Path(id) = path;
-        println!("{:?}", path);
-        let song = form.into_inner();
-        println!("{:?}", song);
+        let new_song = form.into_inner();
 
-        // Kinda dumb, better to have a SongUpdate struct
-        assert_eq!(id, song.id);
+        let song = match Song::find_one(&db, id).await {
+            Ok(record) => record,
+            Err(_) => return render_404(request).await,
+        };
 
-        match song.update(&db).await {
+        match song.update(&db, &new_song).await {
             Ok(_) => {
                 let redirect = HttpResponse::Found().
                     set_header("Location", format!("/songs/{}", song.id)).
@@ -175,7 +173,7 @@ pub mod songs {
         let web::Path(id) = path;
 
         let song = match Song::find_one(&db, id).await {
-            Ok(song) => song,
+            Ok(record) => record,
             Err(_) => return render_404(request).await,
         };
 
