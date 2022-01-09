@@ -16,6 +16,7 @@ Set up the postgres databases:
 
 ``` .sh-session
 $ cargo sqlx database setup
+$ source .env
 $ DATABASE_URL=$TEST_DATABASE_URL cargo sqlx database setup
 ```
 
