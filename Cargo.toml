@@ -5,20 +5,24 @@ authors = ["Andrew Radev <andrey.radev@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-futures       = "0.3.12"
-actix-rt      = "1.1.1"
-actix-web     = "3.3.2"
-actix-session = "0.4.1"
-actix-files   = "0.5.0"
-chrono        = { version = "0.4.19", features = ["serde"] }
-env_logger    = "0.9.0"
-http          = "0.2.6"
-serde         = { version = "1.0", features = ["derive"] }
-askama        = "0.11.0"
-dotenv        = "0.15"
-id3           = "0.3"
-mp3-duration  = "0.1.10"
-url           = "2.2.2"
+futures           = "0.3.12"
+futures-util      = "0.3"
+actix-rt          = "1.1.1"
+actix-web         = "3.3.2"
+actix-session     = "0.4.1"
+actix-files       = "0.5.0"
+actix-multipart   = "0.3"
+chrono            = { version = "0.4.19", features = ["serde"] }
+env_logger        = "0.9.0"
+log               = "0.4.14"
+http              = "0.2.6"
+serde             = { version = "1.0", features = ["derive"] }
+askama            = "0.11.0"
+dotenv            = "0.15"
+id3               = "0.3"
+mp3-duration      = "0.1.10"
+url               = "2.2.2"
+sanitize-filename = "0.2"
 
 # Older version of sqlx to work around this:
 # https://github.com/launchbadge/sqlx/issues/1117#issuecomment-801237734

@@ -1,8 +1,14 @@
+use std::path::PathBuf;
+use std::io::Write;
+
 use askama::Template;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use actix_files::NamedFile;
+use actix_multipart::Multipart;
 use http::StatusCode;
 use sqlx::PgPool;
+use futures_util::TryStreamExt as _;
+use log::warn;
 
 fn render_template(template: impl Template) -> HttpResponse {
     match template.render() {
@@ -123,21 +129,56 @@ pub mod songs {
     }
 
     pub fn new() -> HttpResponse {
-        render_template(NewTemplate { title: "New Song" })
+        render_template(NewTemplate { title: "Upload New Song" })
     }
 
     pub async fn create(
-        db:   web::Data<PgPool>,
-        form: web::Form<NewSong>
-    ) -> HttpResponse {
-        match form.insert(&db).await {
-            Ok(id) => {
-                HttpResponse::Found().
-                    set_header("Location", format!("/songs/{}", id)).
-                    finish()
-            },
-            Err(e) => HttpResponse::BadRequest().body(format!("{:?}", e))
+        db:          web::Data<PgPool>,
+        mut payload: Multipart,
+    ) -> Result<HttpResponse> {
+        let mut last_id = 0;
+
+        while let Some(mut field) = payload.try_next().await? {
+            let content_disposition = field
+                .content_disposition()
+                .ok_or_else(|| HttpResponse::BadRequest().finish())?;
+
+            let filename = content_disposition.get_filename().
+                map(|f| sanitize_filename::sanitize(f)).
+                unwrap();
+            let path = PathBuf::from("./public/uploads").join(filename);
+            if !path.ends_with(".mp3") {
+                warn!("Skipping file '{}', not an mp3", path.display());
+                continue;
+            }
+
+            // Blocking operations executed in a thread
+            let path_clone = path.clone();
+            let mut f = web::block(move || std::fs::File::create(&path_clone)).await?;
+            while let Some(chunk) = field.try_next().await? {
+                f = web::block(move || f.write_all(&chunk).map(|_| f)).await?;
+            }
+
+            let path_clone = path.clone();
+            let new_song = match web::block(move || NewSong::from_path(&path_clone)).await {
+                Ok(song) => song,
+                Err(e) => {
+                    warn!("Skipping file '{}', couldn't get tags: {}", path.display(), e);
+                    continue;
+                },
+            };
+
+            last_id =
+                match new_song.insert(&db).await {
+                    Ok(id) => id,
+                    Err(e) => return Ok(HttpResponse::BadRequest().body(format!("{:?}", e))),
+                };
         }
+
+        let response = HttpResponse::Found().
+            set_header("Location", format!("/songs/{}", last_id)).
+            finish();
+        Ok(response)
     }
 
     pub async fn update(

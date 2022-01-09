@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use futures::TryStreamExt;
 use chrono::{DateTime, Local};
 use sqlx::{PgPool, Row};
@@ -72,6 +74,21 @@ pub struct NewSong {
 }
 
 impl NewSong {
+    pub fn from_path(path: &Path) -> Result<Self, ::id3::Error> {
+        let tag = ::id3::Tag::read_from_path(&path)?;
+        let duration = ::mp3_duration::from_path(&path).
+            map(|d| d.as_secs()).
+            unwrap_or(0) as i32;
+
+        Ok(Self {
+            title: tag.title().map(|t| t.to_owned()).
+                unwrap_or_else(|| format!("{}", path.display())),
+            artist: tag.artist().map(String::from),
+            album: tag.album().map(String::from),
+            duration,
+        })
+    }
+
     pub async fn insert(&self, db: &PgPool) -> Result<i32, sqlx::Error> {
         let result = sqlx::query(r#"
             INSERT INTO songs

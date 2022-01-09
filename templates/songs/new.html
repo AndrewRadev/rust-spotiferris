@@ -1,25 +1,15 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<form action="/songs" method="POST" accept-charset="utf-8">
+<h1>{{ title }}</h1>
+
+<form action="/songs" method="POST" accept-charset="utf-8" enctype="multipart/form-data">
   <table border="0">
     <tr>
-      <td>Song:</td>
+      <td>Song(s):</td>
       <td>
-        <input type="text" name="artist" placeholder="Artist" />
-        -
-        <input type="text" name="title" placeholder="Title*" required=true />
+        <input type="file" multiple name="file" />
       </td>
-    </tr>
-
-    <tr>
-      <td>Album:</td>
-      <td><input type="text" name="album" /></td>
-    </tr>
-
-    <tr>
-      <td>Duration (seconds):</td>
-      <td><input type="number" name="duration" required=true /></td>
     </tr>
   </table>
 

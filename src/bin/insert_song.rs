@@ -1,8 +1,7 @@
 use std::env;
+use std::path::PathBuf;
 
 use dotenv::dotenv;
-use id3::Tag;
-use mp3_duration;
 use sqlx::PgPool;
 
 use spotiferris::models::*;
@@ -17,26 +16,16 @@ async fn main() {
         unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
 
     for filename in env::args().skip(1) {
-        let tag = match Tag::read_from_path(&filename) {
-            Ok(tag) => tag,
+        let path = PathBuf::from(filename);
+        let new_song = match NewSong::from_path(&path) {
+            Ok(song) => song,
             Err(e) => {
-                eprintln!("Skipping {}, error: {}", filename, e);
+                eprintln!("Skipping {}, error: {}", path.display(), e);
                 continue;
             }
         };
-        let duration = mp3_duration::from_path(&filename).
-            map(|d| d.as_secs()).
-            unwrap_or(0) as i32;
-
-        let new_song = NewSong {
-            title: tag.title().unwrap_or(&filename).to_owned(),
-            artist: tag.artist().map(String::from),
-            album: tag.album().map(String::from),
-            duration,
-        };
 
         println!("Inserting: {:?}", new_song);
-
         new_song.insert(&db).await.unwrap();
     }
 }
