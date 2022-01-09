@@ -1,0 +1,2 @@
+ALTER TABLE songs
+ADD COLUMN filename VARCHAR;

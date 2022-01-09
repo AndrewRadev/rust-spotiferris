@@ -14,6 +14,7 @@ pub struct Song {
     pub duration: i32,
     pub created_at: DateTime<Local>,
     pub updated_at: DateTime<Local>,
+    pub filename: Option<String>,
 }
 
 impl Song {
@@ -71,6 +72,7 @@ pub struct NewSong {
     pub artist: Option<String>,
     pub album: Option<String>,
     pub duration: i32,
+    pub filename: Option<String>,
 }
 
 impl NewSong {
@@ -86,21 +88,23 @@ impl NewSong {
             artist: tag.artist().map(String::from),
             album: tag.album().map(String::from),
             duration,
+            filename: Some(path.file_name().unwrap().to_string_lossy().to_string()),
         })
     }
 
     pub async fn insert(&self, db: &PgPool) -> Result<i32, sqlx::Error> {
         let result = sqlx::query(r#"
             INSERT INTO songs
-            (title, artist, album, duration, created_at, updated_at)
+            (title, artist, album, duration, created_at, updated_at, filename)
             VALUES
-            ($1, $2, $3, $4, NOW(), NOW())
+            ($1, $2, $3, $4, NOW(), NOW(), $5)
             RETURNING id;
         "#).
             bind(&self.title).
             bind(&self.artist).
             bind(&self.album).
             bind(&self.duration).
+            bind(&self.filename).
             fetch_one(db);
 
         result.await?.try_get("id")

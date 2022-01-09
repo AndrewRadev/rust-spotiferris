@@ -17,5 +17,15 @@
   <dd class="col-sm-10">{{ updated_at }}</dd>
 </dl>
 
+<p>
+  {% match filename %}
+    {% when Some with (path) %}
+      <audio controls src="/public/uploads/{{ path }}" style="width: 100%">
+      </audio>
+    {% when None %}
+      No file uploaded
+  {% endmatch %}
+</p>
+
 <a href="/songs">Back to index</a>
 {% endblock %}

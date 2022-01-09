@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::io::Write;
+use std::fs;
 
 use askama::Template;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
@@ -44,6 +45,7 @@ pub mod songs {
         pub duration: i32,
         pub created_at: String,
         pub updated_at: String,
+        pub filename: Option<String>,
     }
 
     #[derive(Debug, Template)]
@@ -66,6 +68,8 @@ pub mod songs {
         fn from(source: Song) -> Self {
             let artist = source.artist.unwrap_or("<Unknown>".to_string());
             let display_title = format!("{} - {}", artist, source.title);
+            let filename = source.filename.
+                map(|f| PathBuf::from(f).file_name().unwrap().to_str().unwrap().to_owned());
 
             ShowTemplate {
                 id: source.id,
@@ -75,6 +79,7 @@ pub mod songs {
                 duration: source.duration,
                 created_at: source.created_at.to_rfc2822(),
                 updated_at: source.updated_at.to_rfc2822(),
+                filename,
             }
         }
     }
@@ -147,7 +152,7 @@ pub mod songs {
                 map(|f| sanitize_filename::sanitize(f)).
                 unwrap();
             let path = PathBuf::from("./public/uploads").join(filename);
-            if !path.ends_with(".mp3") {
+            if path.extension().is_none() || path.extension().unwrap() != "mp3" {
                 warn!("Skipping file '{}', not an mp3", path.display());
                 continue;
             }
@@ -175,8 +180,14 @@ pub mod songs {
                 };
         }
 
+        let location =
+            if last_id > 0 {
+                format!("/songs/{}", last_id)
+            } else {
+                String::from("/songs")
+            };
         let response = HttpResponse::Found().
-            set_header("Location", format!("/songs/{}", last_id)).
+            set_header("Location", location).
             finish();
         Ok(response)
     }
@@ -217,6 +228,12 @@ pub mod songs {
             Ok(record) => record,
             Err(_) => return render_404(request).await,
         };
+
+        if let Some(filename) = &song.filename {
+            let path = PathBuf::from("./public/uploads").join(filename);
+            fs::remove_file(&path).
+                unwrap_or_else(|e| warn!("Couldn't delete file {}: {}", path.display(), e));
+        }
 
         match song.destroy(&db).await {
             Ok(_) => {

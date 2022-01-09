@@ -1,2 +1,0 @@
-ALTER TABLE songs
-ADD COLUMN file VARCHAR;
