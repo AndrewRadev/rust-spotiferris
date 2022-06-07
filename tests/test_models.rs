@@ -35,6 +35,7 @@ async fn test_song_insertion() {
         artist:   Some(String::from("Homestuck")),
         album:    Some(String::from("Homestuck Vol. 1-4")),
         duration: 249,
+        filename: None,
     };
 
     let id = new_song.insert(&db).await.unwrap();
@@ -56,6 +57,7 @@ async fn test_song_listing() {
         artist:   Some(String::from("Carbon Based Patterns")),
         album:    Some(String::from("World of Sleepers")),
         duration: 300,
+        filename: None,
     };
 
     let id_1 = new_song.insert(&db).await.unwrap();
@@ -80,6 +82,7 @@ async fn test_song_update() {
         artist:   None,
         album:    Some(String::from("Chrono Trigger OST")),
         duration: 204,
+        filename: None,
     };
     let id = new_song.insert(&db).await.unwrap();
     let song = Song::find_one(&db, id).await.unwrap();
@@ -106,6 +109,7 @@ async fn test_song_destroy() {
         artist:   None,
         album:    Some(String::from("Chrono Trigger OST")),
         duration: 204,
+        filename: None,
     };
     let id = new_song.insert(&db).await.unwrap();
     let song = Song::find_one(&db, id).await.unwrap();
