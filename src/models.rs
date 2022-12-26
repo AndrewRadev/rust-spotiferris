@@ -4,6 +4,7 @@ use futures::TryStreamExt;
 use chrono::{DateTime, Local};
 use sqlx::{PgPool, Row};
 use serde::Deserialize;
+use id3::TagLike;
 
 #[derive(Debug, sqlx::FromRow, Deserialize)]
 pub struct Song {

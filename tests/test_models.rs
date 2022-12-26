@@ -25,7 +25,7 @@ async fn clean_db(db: &PgPool) {
     sqlx::query("DELETE FROM songs").execute(db).await.unwrap();
 }
 
-#[actix_rt::test]
+#[actix_web::test]
 async fn test_song_insertion() {
     let db = get_db().await;
     clean_db(&db).await;
@@ -47,7 +47,7 @@ async fn test_song_insertion() {
     assert_eq!(song.duration, new_song.duration);
 }
 
-#[actix_rt::test]
+#[actix_web::test]
 async fn test_song_listing() {
     let db = get_db().await;
     clean_db(&db).await;
@@ -72,7 +72,7 @@ async fn test_song_listing() {
     assert!(songs.contains(&id_2));
 }
 
-#[actix_rt::test]
+#[actix_web::test]
 async fn test_song_update() {
     let db = get_db().await;
     clean_db(&db).await;
@@ -99,7 +99,7 @@ async fn test_song_update() {
     assert_ne!(updated_song.updated_at, song.updated_at);
 }
 
-#[actix_rt::test]
+#[actix_web::test]
 async fn test_song_destroy() {
     let db = get_db().await;
     clean_db(&db).await;

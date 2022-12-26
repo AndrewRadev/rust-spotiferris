@@ -1,6 +1,6 @@
 use std::path::PathBuf;
-use std::io::Write;
 use std::fs;
+use std::io::Write;
 
 use askama::Template;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
@@ -18,10 +18,17 @@ fn render_template(template: impl Template) -> HttpResponse {
     }
 }
 
-pub async fn render_404(request: HttpRequest) -> actix_web::Result<HttpResponse> {
-    NamedFile::open("static/404.html")?.
-        set_status_code(StatusCode::NOT_FOUND).
-        into_response(&request)
+pub async fn render_404(request: HttpRequest) -> Result<HttpResponse> {
+    // use actix_web::Responder;
+    // let file = NamedFile::open("static/404.html")?;
+    // Ok(file.customize().with_status(StatusCode::NOT_FOUND).respond_to(&request))
+
+    let file = NamedFile::open_async("static/404.html").await?;
+    let mut response = file.into_response(&request);
+
+    *response.status_mut() = StatusCode::NOT_FOUND;
+
+    Ok(response)
 }
 
 pub mod songs {
@@ -112,7 +119,7 @@ pub mod songs {
         db:      web::Data<PgPool>,
         path:    web::Path<i32>
     ) -> Result<HttpResponse> {
-        let web::Path(id) = path;
+        let id = path.into_inner();
 
         match Song::find_one(&db, id).await {
             Ok(song) => Ok(render_template(ShowTemplate::from(song))),
@@ -125,7 +132,7 @@ pub mod songs {
         db:      web::Data<PgPool>,
         path:    web::Path<i32>
     ) -> Result<HttpResponse> {
-        let web::Path(id) = path;
+        let id = path.into_inner();
 
         match Song::find_one(&db, id).await {
             Ok(song) => Ok(render_template(EditTemplate::from(song))),
@@ -133,7 +140,7 @@ pub mod songs {
         }
     }
 
-    pub fn new() -> HttpResponse {
+    pub async fn new() -> HttpResponse {
         render_template(NewTemplate { title: "Upload New Song" })
     }
 
@@ -144,11 +151,11 @@ pub mod songs {
         let mut last_id = 0;
 
         while let Some(mut field) = payload.try_next().await? {
-            let content_disposition = field
-                .content_disposition()
-                .ok_or_else(|| HttpResponse::BadRequest().finish())?;
+            // let content_disposition = field
+            //     .content_disposition()
+            //     .ok_or_else(|| HttpResponse::BadRequest().finish())?;
 
-            let filename = content_disposition.get_filename().
+            let filename = field.content_disposition().get_filename().
                 map(|f| sanitize_filename::sanitize(f)).
                 unwrap();
             let path = PathBuf::from("./public/uploads").join(filename);
@@ -159,13 +166,13 @@ pub mod songs {
 
             // Blocking operations executed in a thread
             let path_clone = path.clone();
-            let mut f = web::block(move || std::fs::File::create(&path_clone)).await?;
+            let mut f = web::block(move || std::fs::File::create(&path_clone)).await??;
             while let Some(chunk) = field.try_next().await? {
-                f = web::block(move || f.write_all(&chunk).map(|_| f)).await?;
+                f = web::block(move || f.write_all(&chunk).map(|_| f)).await??;
             }
 
             let path_clone = path.clone();
-            let new_song = match web::block(move || NewSong::from_path(&path_clone)).await {
+            let new_song = match web::block(move || NewSong::from_path(&path_clone)).await? {
                 Ok(song) => song,
                 Err(e) => {
                     warn!("Skipping file '{}', couldn't get tags: {}", path.display(), e);
@@ -187,7 +194,7 @@ pub mod songs {
                 String::from("/songs")
             };
         let response = HttpResponse::Found().
-            set_header("Location", location).
+            insert_header(("Location", location)).
             finish();
         Ok(response)
     }
@@ -198,7 +205,7 @@ pub mod songs {
         path:    web::Path<i32>,
         form:    web::Form<NewSong>
     ) -> Result<HttpResponse> {
-        let web::Path(id) = path;
+        let id = path.into_inner();
         let new_song = form.into_inner();
 
         let song = match Song::find_one(&db, id).await {
@@ -209,7 +216,7 @@ pub mod songs {
         match song.update(&db, &new_song).await {
             Ok(_) => {
                 let redirect = HttpResponse::Found().
-                    set_header("Location", format!("/songs/{}", song.id)).
+                    insert_header(("Location", format!("/songs/{}", song.id))).
                     finish();
                 Ok(redirect)
             },
@@ -222,7 +229,7 @@ pub mod songs {
         db:      web::Data<PgPool>,
         path:    web::Path<i32>,
     ) -> Result<HttpResponse> {
-        let web::Path(id) = path;
+        let id = path.into_inner();
 
         let song = match Song::find_one(&db, id).await {
             Ok(record) => record,
@@ -238,7 +245,7 @@ pub mod songs {
         match song.destroy(&db).await {
             Ok(_) => {
                 let redirect = HttpResponse::Found().
-                    set_header("Location", "/songs").
+                    insert_header(("Location", "/songs")).
                     finish();
                 Ok(redirect)
             },

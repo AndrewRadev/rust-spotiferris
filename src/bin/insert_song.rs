@@ -6,7 +6,7 @@ use sqlx::PgPool;
 
 use spotiferris::models::*;
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() {
     dotenv().ok();
 
