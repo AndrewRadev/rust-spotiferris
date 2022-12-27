@@ -22,7 +22,4 @@ id3               = "1.5.1"
 mp3-duration      = "0.1.10"
 url               = "2.3.1"
 sanitize-filename = "0.4.0"
-
-# Older version of sqlx to work around this:
-# https://github.com/launchbadge/sqlx/issues/1117#issuecomment-801237734
-sqlx = { version = "0.6.2", default-features = false, features = ["runtime-tokio-rustls", "macros", "postgres", "chrono", "migrate"] }
+sqlx              = { version = "0.6.2", default-features = false, features = ["runtime-tokio-rustls", "macros", "postgres", "chrono", "migrate"] }
