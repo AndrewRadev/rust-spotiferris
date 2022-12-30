@@ -16,8 +16,8 @@ Set up the postgres databases:
 
 ``` .sh-session
 $ cargo sqlx database setup
-$ source .env
-$ DATABASE_URL=$TEST_DATABASE_URL cargo sqlx database setup
 ```
 
-Tests should now pass, but they need to run in one thread -- execute with `./run_test`. Launch development server with `./server` (port 7000), which uses [cargo-watch](https://github.com/watchexec/cargo-watch).
+Running the tests should now work. They use `sqlx::test` to run on test databases.
+
+Launch development server with `./server` (port 7000), which uses [cargo-watch](https://github.com/watchexec/cargo-watch).

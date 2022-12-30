@@ -1,35 +1,9 @@
-use dotenv::dotenv;
 use sqlx::PgPool;
 
 use spotiferris::models::{NewSong, Song};
 
-async fn get_db() -> PgPool {
-    dotenv().ok();
-
-    let database_url = std::env::var("TEST_DATABASE_URL").
-        expect("TEST_DATABASE_URL must be set");
-
-    let db = PgPool::connect(&database_url).
-        await.
-        unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
-
-    sqlx::migrate!("./migrations").
-        run(&db).
-        await.
-        unwrap();
-
-    db
-}
-
-async fn clean_db(db: &PgPool) {
-    sqlx::query("DELETE FROM songs").execute(db).await.unwrap();
-}
-
-#[actix_web::test]
-async fn test_song_insertion() {
-    let db = get_db().await;
-    clean_db(&db).await;
-
+#[sqlx::test]
+async fn test_song_insertion(db: PgPool) {
     let new_song = NewSong {
         title:    String::from("Atomyk Ebonpyre"),
         artist:   Some(String::from("Homestuck")),
@@ -47,11 +21,8 @@ async fn test_song_insertion() {
     assert_eq!(song.duration, new_song.duration);
 }
 
-#[actix_web::test]
-async fn test_song_listing() {
-    let db = get_db().await;
-    clean_db(&db).await;
-
+#[sqlx::test]
+async fn test_song_listing(db: PgPool) {
     let new_song = NewSong {
         title:    String::from("Set Theory"),
         artist:   Some(String::from("Carbon Based Patterns")),
@@ -72,11 +43,8 @@ async fn test_song_listing() {
     assert!(songs.contains(&id_2));
 }
 
-#[actix_web::test]
-async fn test_song_update() {
-    let db = get_db().await;
-    clean_db(&db).await;
-
+#[sqlx::test]
+async fn test_song_update(db: PgPool) {
     let mut new_song = NewSong {
         title:    String::from("Undersea Palace"),
         artist:   None,
@@ -99,11 +67,8 @@ async fn test_song_update() {
     assert_ne!(updated_song.updated_at, song.updated_at);
 }
 
-#[actix_web::test]
-async fn test_song_destroy() {
-    let db = get_db().await;
-    clean_db(&db).await;
-
+#[sqlx::test]
+async fn test_song_destroy(db: PgPool) {
     let new_song = NewSong {
         title:    String::from("Undersea Palace"),
         artist:   None,
