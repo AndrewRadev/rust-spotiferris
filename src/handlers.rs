@@ -151,10 +151,6 @@ pub mod songs {
         let mut last_id = 0;
 
         while let Some(mut field) = payload.try_next().await? {
-            // let content_disposition = field
-            //     .content_disposition()
-            //     .ok_or_else(|| HttpResponse::BadRequest().finish())?;
-
             let filename = field.content_disposition().get_filename().
                 map(|f| sanitize_filename::sanitize(f)).
                 unwrap();
